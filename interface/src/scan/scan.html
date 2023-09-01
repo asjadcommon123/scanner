@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barcode Scanner</title>
+  <!-- Include QuaggaJS library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+  <div id="interactive" class="viewport"></div>
+
+  <script>
+    const endpoint = 'https://3500-davoweb3-prototipo-bjspfw2gu94.ws-us104.gitpod.io';
+
+    Quagga.init(
+      {
+        inputStream: {
+          type: 'LiveStream',
+          constraints: {
+            width: 640,
+            height: 480,
+            facingMode: 'environment' // Use the rear camera
+          }
+        },
+        locator: {
+          patchSize: 'medium',
+          halfSample: true
+        },
+        numOfWorkers: navigator.hardwareConcurrency || 2,
+        decoder: {
+          readers: ['ean_reader']
+        },
+        locate: true
+      },
+      function(err) {
+        if (err) {
+          console.error('Error:', err);
+          return;
+        }
+        Quagga.start();
+      }
+    );
+
+    Quagga.onDetected(function(result) {
+      if (result && result.codeResult) {
+        const capturedData = result.codeResult.code;
+        console.log('Captured Data:', capturedData);
+
+        // Send the captured data to the endpoint
+        sendToEndpoint(capturedData);
+      }
+    });
+
+    function sendToEndpoint(data) {
+      const requestBody = JSON.stringify({ data });
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: requestBody
+      })
+        .then(response => {
+          if (response.ok) {
+            console.log('Data sent successfully');
+          } else {
+            console.error('Failed to send data');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+  </script>
+</body>
+</html>
